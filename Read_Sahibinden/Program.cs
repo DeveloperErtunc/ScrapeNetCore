@@ -1,5 +1,5 @@
 ﻿var host = Injections.MyConfigurationService();
 var myService = host.Services.GetRequiredService<IReadDataService>();
-var webPage = await myService.ReadWebPageData();
-Console.WriteLine(webPage);
+var liItems = await myService.ReadWebPageData();
+Console.WriteLine(string.Join(",",liItems));
 Console.ReadLine();

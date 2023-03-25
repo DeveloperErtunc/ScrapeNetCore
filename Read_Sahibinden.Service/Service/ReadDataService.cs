@@ -2,21 +2,25 @@
 public class ReadDataService : IReadDataService
 {
     HttpClient _httpClient;
-    public ReadDataService(IHttpClientFactory httpClientFactory)
+
+    public ReadDataService(HttpClient httpClient)
     {
-        _httpClient = httpClientFactory.CreateClient();
+        _httpClient = httpClient;
+        _httpClient.DefaultRequestHeaders.Add("User-Agent", "me");
     }
-    public async Task<string> ReadWebPageData()
+
+    public async Task<List<string>> ReadWebPageData()
     {
+        List<string> datas = new List<string>();
+
         var response = await _httpClient.GetAsync("https://www.sahibinden.com");
         Stream stream= await response.Content.ReadAsStreamAsync();
         HtmlDocument document= new HtmlDocument();
         document.Load(stream);
-        var dataOfHtml = document.DocumentNode.SelectNodes("//ul[@class='vitrin-list clearfix']");
-        foreach (HtmlNode data in dataOfHtml)
-        {
-           var dataStr = data.InnerHtml;
+        var iTagList = document.DocumentNode.SelectNodes("//ul[@class='vitrin-list clearfix']//li");
+        foreach ( var item in iTagList) {
+           datas.Add(item.InnerHtml);
         }
-        return document.ToString() ?? string.Empty;
+        return datas;
     }
 }
