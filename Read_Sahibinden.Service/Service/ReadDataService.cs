@@ -19,7 +19,11 @@ public class ReadDataService : IReadDataService
         document.Load(stream);
         var iTagList = document.DocumentNode.SelectNodes("//ul[@class='vitrin-list clearfix']//li");
         foreach ( var item in iTagList) {
-           datas.Add(item.InnerHtml);
+            var item2 = item;
+            var doc = new HtmlDocument();
+            doc.LoadHtml(item2.InnerHtml);
+            var a = doc.DocumentNode.Descendants("a").First();
+            string hrefValue = a.Attributes["href"].Value;
         }
         return datas;
     }
