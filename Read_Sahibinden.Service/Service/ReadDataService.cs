@@ -12,6 +12,11 @@ public class ReadDataService : IReadDataService
         Stream stream= await response.Content.ReadAsStreamAsync();
         HtmlDocument document= new HtmlDocument();
         document.Load(stream);
+        var dataOfHtml = document.DocumentNode.SelectNodes("//ul[@class='vitrin-list clearfix']");
+        foreach (HtmlNode data in dataOfHtml)
+        {
+           var dataStr = data.ToString();
+        }
         return document.ToString() ?? string.Empty;
     }
 }
