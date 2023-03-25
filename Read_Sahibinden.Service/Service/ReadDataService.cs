@@ -15,7 +15,7 @@ public class ReadDataService : IReadDataService
         var dataOfHtml = document.DocumentNode.SelectNodes("//ul[@class='vitrin-list clearfix']");
         foreach (HtmlNode data in dataOfHtml)
         {
-           var dataStr = data.ToString();
+           var dataStr = data.InnerHtml;
         }
         return document.ToString() ?? string.Empty;
     }
