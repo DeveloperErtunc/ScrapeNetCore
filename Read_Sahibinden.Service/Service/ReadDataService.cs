@@ -24,6 +24,14 @@ public class ReadDataService : IReadDataService
             doc.LoadHtml(item2.InnerHtml);
             var a = doc.DocumentNode.Descendants("a").First();
             string hrefValue = a.Attributes["href"].Value;
+            var ilanLink = "https://www.sahibinden.com" + hrefValue;
+
+            var newResponse = await _httpClient.GetAsync(ilanLink);
+            Stream newStream = await newResponse.Content.ReadAsStreamAsync();
+            HtmlDocument htmlDocument = new HtmlDocument();
+            htmlDocument.Load(newStream);
+            var ilanDetay = htmlDocument.DocumentNode.SelectSingleNode("//div[@class='classifiedInfo']");
+            var fiyat = ilanDetay.InnerText;
         }
         return datas;
     }
