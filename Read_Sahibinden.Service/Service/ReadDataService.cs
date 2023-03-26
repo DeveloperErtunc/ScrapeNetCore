@@ -12,40 +12,32 @@ public class ReadDataService : IReadDataService
 
     public async Task ReadWebPageData()
     {
-            List<AdvertisementMinModel> datas = new List<AdvertisementMinModel>();
-            var response = await _httpClient.GetAsync(string.Empty);
-            if (response.StatusCode == HttpStatusCode.OK)
-            {
-                WriteData($"Success : True, Code:{response.StatusCode}", "MainPageLog");
-                Stream stream = await response.Content.ReadAsStreamAsync();
-                HtmlDocument document = new HtmlDocument();
-                document.Load(stream);
-                var iTagList = document.DocumentNode.SelectNodes("//ul[@class='vitrin-list clearfix']//li");
-                foreach (var item in iTagList)
-                {
-                    var href = GetHref(item);
-                    var data = await GetAdvertisementMinModel(href);
-                    if (data != null)
-                        datas.Add(data);
-                }
-                var dataStr = JsonSerializer.Serialize(datas, new JsonSerializerOptions
-                {
-                    Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic),
-                    WriteIndented = true
-                });
-                if (!string.IsNullOrEmpty(dataStr))
-                    WriteData(dataStr);
-             
+        var response = await _httpClient.GetAsync(string.Empty);
+         if(response.StatusCode != HttpStatusCode.OK)
+         {
+            WriteData($"Success : False, Code:{response.StatusCode}", "MainPageLogUnsuccessful");
+            Console.WriteLine("Çalışmadı");
+         }
+        List<AdvertisementMinModel> datas = new List<AdvertisementMinModel>();
+        WriteData($"Success : True, Code:{response.StatusCode}", "MainPageLog");
+        Stream stream = await response.Content.ReadAsStreamAsync();
+        HtmlDocument document = new HtmlDocument();
+        document.Load(stream);
+        var iTagList = document.DocumentNode.SelectNodes("//ul[@class='vitrin-list clearfix']//li");
+        foreach (var item in iTagList)
+        {
+            var href = GetHref(item);
+            var data = await GetAdvertisementMinModel(href);
+            if (data != null)
+                datas.Add(data);
+        }
+        var dataStr = AdvertisementMinModel.GetStr(datas);
+        if (!string.IsNullOrEmpty(dataStr))
+            WriteData(dataStr);
 
-            Console.WriteLine(dataStr);
-                Console.WriteLine("Ortalama fiyat = " + datas.Average(x => x.DecimalPrice));
-
-            }
-            else
-            {
-                WriteData($"Success : False, Code:{response.StatusCode}", "MainPageLogUnsuccessful");
-                Console.WriteLine("Çalışmadı");
-            }
+        Console.WriteLine(dataStr);
+        Console.WriteLine("Ortalama fiyat = " + datas.Average(x => x.DecimalPrice));
+           
     }
     private string GetHref(HtmlNode htmlNode)
     {
