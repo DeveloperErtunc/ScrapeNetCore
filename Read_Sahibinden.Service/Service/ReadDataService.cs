@@ -7,13 +7,14 @@ public class ReadDataService : IReadDataService
     {
         _httpClient = httpClient;
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "me");
+        _httpClient.BaseAddress =new Uri("https://www.sahibinden.com");
     }
 
     public async Task<List<string>> ReadWebPageData()
     {
         List<string> datas = new List<string>();
 
-        var response = await _httpClient.GetAsync("https://www.sahibinden.com");
+        var response = await _httpClient.GetAsync("");
         Stream stream= await response.Content.ReadAsStreamAsync();
         HtmlDocument document= new HtmlDocument();
         document.Load(stream);
@@ -22,16 +23,17 @@ public class ReadDataService : IReadDataService
             var item2 = item;
             var doc = new HtmlDocument();
             doc.LoadHtml(item2.InnerHtml);
-            var a = doc.DocumentNode.Descendants("a").First();
+            var a = doc.DocumentNode.SelectSingleNode("a");
             string hrefValue = a.Attributes["href"].Value;
-            var ilanLink = "https://www.sahibinden.com" + hrefValue;
-
-            var newResponse = await _httpClient.GetAsync(ilanLink);
+            var newResponse = await _httpClient.GetAsync(hrefValue);
             Stream newStream = await newResponse.Content.ReadAsStreamAsync();
             HtmlDocument htmlDocument = new HtmlDocument();
             htmlDocument.Load(newStream);
-            var ilanDetay = htmlDocument.DocumentNode.SelectSingleNode("//div[@class='classifiedInfo']");
-            var fiyat = ilanDetay.InnerText;
+            if(htmlDocument.Text.Contains("classifiedInfo"))
+            {
+                var ilanDetay = htmlDocument.DocumentNode.SelectNodes("//div[@class='classifiedInfo']").FirstOrDefault();
+                var fiyat = ilanDetay.InnerText;
+            }
         }
         return datas;
     }
