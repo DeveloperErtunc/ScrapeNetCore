@@ -1,5 +1,5 @@
 ﻿namespace Read_Sahibinden.Service.IService;
 public interface  IReadDataService
 {
-    public Task<string> ReadWebPageData();
+    public Task ReadWebPageData();
 }

@@ -1,4 +1,6 @@
-﻿namespace Read_Sahibinden.Service;
+﻿using System.Net;
+
+namespace Read_Sahibinden.Service;
 public class ReadDataService : IReadDataService
 {
     HttpClient _httpClient;
@@ -10,26 +12,34 @@ public class ReadDataService : IReadDataService
         _httpClient.BaseAddress =new Uri("https://www.sahibinden.com");
     }
 
-    public async Task<string> ReadWebPageData()
+    public async Task ReadWebPageData()
     {
         List<AdvertisementMinModel> datas = new List<AdvertisementMinModel>();
 
         var response = await _httpClient.GetAsync("");
-        Stream stream= await response.Content.ReadAsStreamAsync();
-        HtmlDocument document= new HtmlDocument();
-        document.Load(stream);
-        var iTagList = document.DocumentNode.SelectNodes("//ul[@class='vitrin-list clearfix']//li");
-        foreach ( var item in iTagList) {
-           var href = GetHref(item);
-            var data  = await  GetAdvertisementMinModel(href);
-            if (data != null)
-                datas.Add(data);
-        }
-        var  dataStr = JsonSerializer.Serialize(datas);
-        if (!string.IsNullOrEmpty(dataStr))
-            WriteData(dataStr);
+        if (response.StatusCode == HttpStatusCode.OK)
+        {
+            Stream stream = await response.Content.ReadAsStreamAsync();
+            HtmlDocument document = new HtmlDocument();
+            document.Load(stream);
+            var iTagList = document.DocumentNode.SelectNodes("//ul[@class='vitrin-list clearfix']//li");
+            foreach (var item in iTagList)
+            {
+                var href = GetHref(item);
+                var data = await GetAdvertisementMinModel(href);
+                if (data != null)
+                    datas.Add(data);
+            }
+            var dataStr = JsonSerializer.Serialize(datas);
+            if (!string.IsNullOrEmpty(dataStr))
+                WriteData(dataStr);
 
-        return dataStr;
+            Console.WriteLine(dataStr);
+            Console.WriteLine("Ortalama fiyat = " + datas.Average(x => x.DecimalPrice));
+
+        }
+        else Console.WriteLine("Çalışmadı");
+        
     }
     private string GetHref(HtmlNode htmlNode)
     {
@@ -55,7 +65,8 @@ public class ReadDataService : IReadDataService
                 return  new AdvertisementMinModel
                 {
                     Title = detailTitle,
-                    Price =   clean.Substring(0, index + 2)
+                    Price =   clean.Substring(0, index + 2),
+                    DecimalPrice = Convert.ToDecimal(clean.Substring(0, index ))
                 };
             }
         }
