@@ -15,30 +15,29 @@ public class ReadDataService : IReadDataService
     public async Task ReadWebPageData()
     {
         List<AdvertisementMinModel> datas = new List<AdvertisementMinModel>();
-
-        var response = await _httpClient.GetAsync("");
-        if (response.StatusCode == HttpStatusCode.OK)
-        {
-            Stream stream = await response.Content.ReadAsStreamAsync();
-            HtmlDocument document = new HtmlDocument();
-            document.Load(stream);
-            var iTagList = document.DocumentNode.SelectNodes("//ul[@class='vitrin-list clearfix']//li");
-            foreach (var item in iTagList)
+            var response = await _httpClient.GetAsync("");
+            if (response.StatusCode == HttpStatusCode.OK)
             {
-                var href = GetHref(item);
-                var data = await GetAdvertisementMinModel(href);
-                if (data != null)
-                    datas.Add(data);
+                Stream stream = await response.Content.ReadAsStreamAsync();
+                HtmlDocument document = new HtmlDocument();
+                document.Load(stream);
+                var iTagList = document.DocumentNode.SelectNodes("//ul[@class='vitrin-list clearfix']//li");
+                foreach (var item in iTagList)
+                {
+                    var href = GetHref(item);
+                    var data = await GetAdvertisementMinModel(href);
+                    if (data != null)
+                        datas.Add(data);
+                }
+                var dataStr = JsonSerializer.Serialize(datas);
+                if (!string.IsNullOrEmpty(dataStr))
+                    WriteData(dataStr);
+
+                Console.WriteLine(dataStr);
+                Console.WriteLine("Ortalama fiyat = " + datas.Average(x => x.DecimalPrice));
+
             }
-            var dataStr = JsonSerializer.Serialize(datas);
-            if (!string.IsNullOrEmpty(dataStr))
-                WriteData(dataStr);
-
-            Console.WriteLine(dataStr);
-            Console.WriteLine("Ortalama fiyat = " + datas.Average(x => x.DecimalPrice));
-
-        }
-        else Console.WriteLine("Çalışmadı");
+            else Console.WriteLine("Çalışmadı");
         
     }
     private string GetHref(HtmlNode htmlNode)
@@ -62,11 +61,13 @@ public class ReadDataService : IReadDataService
             {
                 var clean = detailPrice.InnerText.Replace(" ", "").Replace("/", "").Replace("\n", "");
                 var index = clean.IndexOf("TL");
+                var indexNoPoint = clean.Replace(".", "").IndexOf("TL");
+                var value = clean.Replace(".", "").Substring(0, indexNoPoint);
                 return  new AdvertisementMinModel
                 {
                     Title = detailTitle,
                     Price =   clean.Substring(0, index + 2),
-                    DecimalPrice = Convert.ToDecimal(clean.Substring(0, index ))
+                    DecimalPrice = Convert.ToDecimal(value)
                 };
             }
         }
