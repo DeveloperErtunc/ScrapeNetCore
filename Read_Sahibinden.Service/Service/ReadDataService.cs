@@ -1,6 +1,4 @@
-﻿using System.Net;
-
-namespace Read_Sahibinden.Service;
+﻿namespace Read_Sahibinden.Service;
 public class ReadDataService : IReadDataService
 {
     HttpClient _httpClient;
@@ -14,10 +12,11 @@ public class ReadDataService : IReadDataService
 
     public async Task ReadWebPageData()
     {
-        List<AdvertisementMinModel> datas = new List<AdvertisementMinModel>();
-            var response = await _httpClient.GetAsync("");
+            List<AdvertisementMinModel> datas = new List<AdvertisementMinModel>();
+            var response = await _httpClient.GetAsync(string.Empty);
             if (response.StatusCode == HttpStatusCode.OK)
             {
+                WriteData($"Success : True, Code:{response.StatusCode}", "MainPageLog");
                 Stream stream = await response.Content.ReadAsStreamAsync();
                 HtmlDocument document = new HtmlDocument();
                 document.Load(stream);
@@ -29,16 +28,24 @@ public class ReadDataService : IReadDataService
                     if (data != null)
                         datas.Add(data);
                 }
-                var dataStr = JsonSerializer.Serialize(datas);
+                var dataStr = JsonSerializer.Serialize(datas, new JsonSerializerOptions
+                {
+                    Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic),
+                    WriteIndented = true
+                });
                 if (!string.IsNullOrEmpty(dataStr))
                     WriteData(dataStr);
+             
 
-                Console.WriteLine(dataStr);
+            Console.WriteLine(dataStr);
                 Console.WriteLine("Ortalama fiyat = " + datas.Average(x => x.DecimalPrice));
 
             }
-            else Console.WriteLine("Çalışmadı");
-        
+            else
+            {
+                WriteData($"Success : False, Code:{response.StatusCode}", "MainPageLogUnsuccessful");
+                Console.WriteLine("Çalışmadı");
+            }
     }
     private string GetHref(HtmlNode htmlNode)
     {
@@ -49,34 +56,45 @@ public class ReadDataService : IReadDataService
     }
     private async Task<AdvertisementMinModel?> GetAdvertisementMinModel(string hrefDetail)
     {
-        var newResponse = await _httpClient.GetAsync(hrefDetail);
-        Stream newStream = await newResponse.Content.ReadAsStreamAsync();
-        HtmlDocument doc = new HtmlDocument();
-        doc.Load(newStream);
-        if (doc.Text.Contains("classifiedInfo") && doc.Text.Contains("classifiedDetailTitle"))
+
+        var response = await _httpClient.GetAsync(hrefDetail);
+        if(response.StatusCode == HttpStatusCode.OK)
         {
-            var detailPrice = doc.DocumentNode.SelectSingleNode("//div[@class='classifiedInfo ']//h3");
-            var detailTitle = doc.DocumentNode.SelectSingleNode("//div[@class='classifiedDetailTitle']//h1").InnerHtml ?? string.Empty;
-            if (detailPrice != null && !string.IsNullOrEmpty(detailTitle))
+            Stream newStream = await response.Content.ReadAsStreamAsync();
+            HtmlDocument doc = new HtmlDocument();
+            doc.Load(newStream);
+            if (doc.Text.Contains("classifiedInfo") && doc.Text.Contains("classifiedDetailTitle"))
             {
-                var clean = detailPrice.InnerText.Replace(" ", "").Replace("/", "").Replace("\n", "");
-                var index = clean.IndexOf("TL");
-                var indexNoPoint = clean.Replace(".", "").IndexOf("TL");
-                var value = clean.Replace(".", "").Substring(0, indexNoPoint);
-                return  new AdvertisementMinModel
+                var detailPrice = doc.DocumentNode.SelectSingleNode("//div[@class='classifiedInfo ']//h3");
+                var detailTitle = doc.DocumentNode.SelectSingleNode("//div[@class='classifiedDetailTitle']//h1").InnerHtml ?? string.Empty;
+                if (detailPrice != null && !string.IsNullOrEmpty(detailTitle) && detailPrice.InnerHtml.Contains("TL"))
                 {
-                    Title = detailTitle,
-                    Price =   clean.Substring(0, index + 2),
-                    DecimalPrice = Convert.ToDecimal(value)
-                };
+                    var clean = detailPrice.InnerText.Replace(" ", "").Replace("/", "").Replace("\n", "");
+                    var index = clean.IndexOf("TL");
+                    var indexNoPoint = clean.Replace(".", "").IndexOf("TL");
+                    var value = Convert.ToDecimal(clean.Replace(".", "").Substring(0, indexNoPoint));
+                    var model = new AdvertisementMinModel
+                    {
+                        Title = detailTitle,
+                        Price = clean.Substring(0, index + 2),
+                        DecimalPrice = value
+                    };
+                    WriteData($"Href:{hrefDetail},Success : True, Code:{response.StatusCode}", "DetailLog");
+                    return model;
+                }
             }
         }
+        WriteData($"Href:{hrefDetail},Success : False, Code:{response.StatusCode}", "DetailLogUnsuccessful");
         return null;
+
     }
-    private void WriteData(string dataStr)
+    private void WriteData(string dataStr,string? folderName = null)
     {
+        if (string.IsNullOrEmpty(folderName))
+            folderName = Guid.NewGuid().ToString();
+
         DirectoryInfo info = new DirectoryInfo(Directory.GetCurrentDirectory());
-        string directory = info.Parent.Parent.Parent.FullName + $"\\MyLog\\{Guid.NewGuid()}.txt";
+        string directory = info.Parent.Parent.Parent.FullName + $"\\MyLog\\{folderName}.txt";
         FileStream fs = new FileStream(directory, FileMode.OpenOrCreate, FileAccess.Write);
         fs.Close();
         File.AppendAllText(directory, Environment.NewLine + dataStr);
