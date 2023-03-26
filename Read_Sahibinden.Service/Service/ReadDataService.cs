@@ -31,8 +31,11 @@ public class ReadDataService : IReadDataService
             htmlDocument.Load(newStream);
             if(htmlDocument.Text.Contains("classifiedInfo"))
             {
-                var ilanDetay = htmlDocument.DocumentNode.SelectNodes("//div[@class='classifiedInfo']").FirstOrDefault();
-                var fiyat = ilanDetay.InnerText;
+                string price = string.Empty;
+                var ilanDetay = htmlDocument.DocumentNode.SelectSingleNode("//div[@class='classifiedInfo ']");
+                if(ilanDetay != null)
+                    price = ilanDetay.InnerText;
+                    
             }
         }
         return datas;
