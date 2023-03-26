@@ -1,5 +1,7 @@
-﻿namespace Read_Sahibinden.Service.IService;
+﻿using Read_Sahibinden.Service.MyModel;
+
+namespace Read_Sahibinden.Service.IService;
 public interface  IReadDataService
 {
-    public Task<List<string>> ReadWebPageData();
+    public Task<List<AdvertisementMinModel>> ReadWebPageData();
 }

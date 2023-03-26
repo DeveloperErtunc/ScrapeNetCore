@@ -10,9 +10,9 @@ public class ReadDataService : IReadDataService
         _httpClient.BaseAddress =new Uri("https://www.sahibinden.com");
     }
 
-    public async Task<List<string>> ReadWebPageData()
+    public async Task<List<AdvertisementMinModel>> ReadWebPageData()
     {
-        List<string> datas = new List<string>();
+        List<AdvertisementMinModel> datas = new List<AdvertisementMinModel>();
 
         var response = await _httpClient.GetAsync("");
         Stream stream= await response.Content.ReadAsStreamAsync();
@@ -20,24 +20,41 @@ public class ReadDataService : IReadDataService
         document.Load(stream);
         var iTagList = document.DocumentNode.SelectNodes("//ul[@class='vitrin-list clearfix']//li");
         foreach ( var item in iTagList) {
-            var item2 = item;
-            var doc = new HtmlDocument();
-            doc.LoadHtml(item2.InnerHtml);
-            var a = doc.DocumentNode.SelectSingleNode("a");
-            string hrefValue = a.Attributes["href"].Value;
-            var newResponse = await _httpClient.GetAsync(hrefValue);
-            Stream newStream = await newResponse.Content.ReadAsStreamAsync();
-            HtmlDocument htmlDocument = new HtmlDocument();
-            htmlDocument.Load(newStream);
-            if(htmlDocument.Text.Contains("classifiedInfo"))
-            {
-                string price = string.Empty;
-                var ilanDetay = htmlDocument.DocumentNode.SelectSingleNode("//div[@class='classifiedInfo ']");
-                if(ilanDetay != null)
-                    price = ilanDetay.InnerText;
-                    
-            }
+           var href = GetHref(item);
+            var data  = await  GetAdvertisementMinModel(href);
+            if (data != null)
+                datas.Add(data);
         }
         return datas;
+    }
+    private string GetHref(HtmlNode htmlNode)
+    {
+        var doc = new HtmlDocument();
+        doc.LoadHtml(htmlNode.InnerHtml);
+        var a = doc.DocumentNode.SelectSingleNode("a");
+        return a.Attributes["href"].Value;
+    }
+    private async Task<AdvertisementMinModel?> GetAdvertisementMinModel(string hrefDetail)
+    {
+        var newResponse = await _httpClient.GetAsync(hrefDetail);
+        Stream newStream = await newResponse.Content.ReadAsStreamAsync();
+        HtmlDocument doc = new HtmlDocument();
+        doc.Load(newStream);
+        if (doc.Text.Contains("classifiedInfo") && doc.Text.Contains("classifiedDetailTitle"))
+        {
+            var detailPrice = doc.DocumentNode.SelectSingleNode("//div[@class='classifiedInfo ']//h3");
+            var detailTitle = doc.DocumentNode.SelectSingleNode("//div[@class='classifiedDetailTitle']//h1").InnerHtml ?? string.Empty;
+            if (detailPrice != null && !string.IsNullOrEmpty(detailTitle))
+            {
+                var clean = detailPrice.InnerText.Replace(" ", "").Replace("/", "").Replace("\n", "");
+                var index = clean.IndexOf("TL");
+                return  new AdvertisementMinModel
+                {
+                    Title = detailTitle,
+                    Price =   clean.Substring(0, index + 2)
+                };
+            }
+        }
+        return null;
     }
 }
