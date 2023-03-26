@@ -17,6 +17,7 @@ public class ReadDataService : IReadDataService
          {
             WriteData($"Success : False, Code:{response.StatusCode}", "MainPageLogUnsuccessful");
             Console.WriteLine("Çalışmadı");
+            return;
          }
         List<AdvertisementMinModel> datas = new List<AdvertisementMinModel>();
         WriteData($"Success : True, Code:{response.StatusCode}", "MainPageLog");
