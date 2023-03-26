@@ -10,16 +10,8 @@ public class ReadDataService : IReadDataService
         _httpClient.BaseAddress =new Uri("https://www.sahibinden.com");
     }
 
-    public async Task<List<AdvertisementMinModel>> ReadWebPageData()
+    public async Task<string> ReadWebPageData()
     {
-        
-        //DirectoryInfo info = new DirectoryInfo(Directory.GetCurrentDirectory());
-        //string directory = info.Parent.Parent.Parent.FullName;
-        //string writeText = "as";
-        //string fileName = directory;
-        //FileStream fs = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.Write);
-        //fs.Close();
-        //File.AppendAllText(fileName, Environment.NewLine + writeText);
         List<AdvertisementMinModel> datas = new List<AdvertisementMinModel>();
 
         var response = await _httpClient.GetAsync("");
@@ -33,10 +25,11 @@ public class ReadDataService : IReadDataService
             if (data != null)
                 datas.Add(data);
         }
-        
+        var  dataStr = JsonSerializer.Serialize(datas);
+        if (!string.IsNullOrEmpty(dataStr))
+            WriteData(dataStr);
 
-        Console.WriteLine(datas);
-        return datas;
+        return dataStr;
     }
     private string GetHref(HtmlNode htmlNode)
     {
@@ -67,5 +60,13 @@ public class ReadDataService : IReadDataService
             }
         }
         return null;
+    }
+    private void WriteData(string dataStr)
+    {
+        DirectoryInfo info = new DirectoryInfo(Directory.GetCurrentDirectory());
+        string directory = info.Parent.Parent.Parent.FullName + $"\\MyLog\\{Guid.NewGuid()}.txt";
+        FileStream fs = new FileStream(directory, FileMode.OpenOrCreate, FileAccess.Write);
+        fs.Close();
+        File.AppendAllText(directory, Environment.NewLine + dataStr);
     }
 }
