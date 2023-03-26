@@ -18,4 +18,8 @@
     <ProjectReference Include="..\Read_Sahibinden.Service\Read_Sahibinden.Service.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="MyLog\" />
+  </ItemGroup>
+
 </Project>

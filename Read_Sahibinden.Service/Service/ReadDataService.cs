@@ -12,6 +12,14 @@ public class ReadDataService : IReadDataService
 
     public async Task<List<AdvertisementMinModel>> ReadWebPageData()
     {
+        
+        //DirectoryInfo info = new DirectoryInfo(Directory.GetCurrentDirectory());
+        //string directory = info.Parent.Parent.Parent.FullName;
+        //string writeText = "as";
+        //string fileName = directory;
+        //FileStream fs = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.Write);
+        //fs.Close();
+        //File.AppendAllText(fileName, Environment.NewLine + writeText);
         List<AdvertisementMinModel> datas = new List<AdvertisementMinModel>();
 
         var response = await _httpClient.GetAsync("");
@@ -25,6 +33,9 @@ public class ReadDataService : IReadDataService
             if (data != null)
                 datas.Add(data);
         }
+        
+
+        Console.WriteLine(datas);
         return datas;
     }
     private string GetHref(HtmlNode htmlNode)
